@@ -8,6 +8,9 @@ import { useInView } from "react-intersection-observer";
 import CountdownTimer from "./Countdown";
 import Form from "./Form";
 import WishesList from "./WishesList";
+import WaxSeal from "./WaxSeal";
+import DoorCover from "./DoorCover";
+import CurtainCover from "./CurtainCover";
 import { config } from "@/lib/config";
 
 type WeddingScreenProps = {
@@ -17,6 +20,7 @@ type WeddingScreenProps = {
 const WeddingScreen = ({ name }: WeddingScreenProps) => {
   const [fadeClass, setFadeClass] = useState("opacity-0");
   const [isOpen, setIsOpen] = useState(false);
+  const [isEnvelopeOpening, setIsEnvelopeOpening] = useState(false);
   const audioRef = useRef(null);
 
   // Untuk fade-in pertama kali
@@ -29,11 +33,18 @@ const WeddingScreen = ({ name }: WeddingScreenProps) => {
   }, []);
 
   const handleOpen = () => {
-    setIsOpen(!isOpen);
-    if (!isOpen && audioRef.current) {
-      // Play music when "Open" is clicked
+    if (isOpen) {
+      setIsOpen(false);
+      return;
+    }
+    // Start envelope animation, then reveal the invitation once it finishes
+    setIsEnvelopeOpening(true);
+    if (audioRef.current) {
       (audioRef.current as HTMLAudioElement).play();
     }
+    setTimeout(() => {
+      setIsOpen(true);
+    }, 1500); // matches the CSS animation timing below
   };
 
   const { ref: mainRef, inView: isMainInView } = useInView({
@@ -93,6 +104,40 @@ const WeddingScreen = ({ name }: WeddingScreenProps) => {
   }, [isSlide8InView]);
 
   return (
+    <>
+      {/* Full-screen Opening Cover — style controlled by NEXT_PUBLIC_COVER_STYLE */}
+      {!isOpen && config.coverStyle === "door" && (
+        <DoorCover
+          coupleNames={config.coupleNames}
+          isOpening={isEnvelopeOpening}
+          onTap={handleOpen}
+        />
+      )}
+      {!isOpen && config.coverStyle === "curtain" && (
+        <CurtainCover
+          coupleNames={config.coupleNames}
+          isOpening={isEnvelopeOpening}
+          onTap={handleOpen}
+        />
+      )}
+      {!isOpen && config.coverStyle !== "door" && config.coverStyle !== "curtain" && (
+        <div
+          className={`envelope-cover ${isEnvelopeOpening ? "opening" : ""}`}
+          onClick={!isEnvelopeOpening ? handleOpen : undefined}
+        >
+          <div className="envelope-cover-pattern"></div>
+          <div className="envelope-cover-content">
+            <p className="envelope-tap-text text-xs uppercase tracking-[4px] text-white/90 font-legan">
+              Tap to Reveal
+            </p>
+            <div className="wax-seal-wrap">
+              <WaxSeal coupleNames={config.coupleNames} size={150} />
+            </div>
+          </div>
+          <div className="envelope-cover-flap-shadow"></div>
+        </div>
+      )}
+
     <div
       className={`h-screen w-screen flex flex-col md:flex-row ${fadeClass} transition-opacity duration-1000`}
     >
@@ -151,14 +196,7 @@ const WeddingScreen = ({ name }: WeddingScreenProps) => {
               <p className="mt-5 text-lg uppercase font-xs tracking-widest text-white">
                 {name ? `Dear ${name},` : "Welcome"}
               </p>
-              {!isOpen ? (
-                <button
-                  className="animate-bounce  mt-5 px-5 py-1 uppercase text-xs border border-white hover:text-white hover:bg-transparent rounded-full bg-white text-black transition"
-                  onClick={handleOpen}
-                >
-                  Open Invitation
-                </button>
-              ) : (
+              {isOpen && (
                 <IoIosArrowUp
                   stroke="4"
                   className="mx-auto mt-20 animate-upDown text-white"
@@ -352,7 +390,7 @@ const WeddingScreen = ({ name }: WeddingScreenProps) => {
                 {config.holyMatrimony.enabled && (
                   <div className="mt-5 mx-auto flex flex-col items-center">
                     <h3 className="uppercase font-ovo text-sm text-center mt-5 mb-2">
-                      Holy Matrimony <br /> {config.holyMatrimony.time}
+                      Nikah Ceremony <br /> {config.holyMatrimony.time}
                     </h3>
                     <p className="text-sm text-center  font-legan text-white">
                       {config.holyMatrimony.place} <br /> {config.holyMatrimony.place_details}
@@ -370,7 +408,7 @@ const WeddingScreen = ({ name }: WeddingScreenProps) => {
                 {config.weddingReception.enabled && (
                   <div className="mt-5 mx-auto flex  flex-col items-center">
                     <h3 className="uppercase font-ovo text-sm text-center mt-5 mb-2">
-                      Wedding Reception <br /> {config.weddingReception.time}
+                      Walima Reception <br /> {config.weddingReception.time}
                     </h3>
                     <p className="text-sm text-center  font-legan text-white">
                       {config.weddingReception.place} <br /> {config.weddingReception.place_details}
@@ -422,7 +460,7 @@ const WeddingScreen = ({ name }: WeddingScreenProps) => {
                   className={`text-2xl text-white  font-ovo fadeInMoveSlow ${isSlide7InView ? "active" : ""
                     }`}
                 >
-                  JOIN OUR EXCLUSIVE LIVE STREAMING EVENT
+                  JOIN OUR NIKAH LIVE STREAM
                 </h1>
 
                 <div
@@ -505,7 +543,7 @@ const WeddingScreen = ({ name }: WeddingScreenProps) => {
                 className={`${isSlide9InView ? "active" : ""} fadeInMove`}
               >
                 <h1 className="text-3xl text-white font-ovo text-center uppercase">
-                  RSVP AND WISHES
+                  RSVP & DUAS
                 </h1>
                 <p className="text-sm font-legan text-white/80 text-center">
                 {config.rsvp.detail}
@@ -576,6 +614,7 @@ const WeddingScreen = ({ name }: WeddingScreenProps) => {
       {/* Audio Element */}
       <audio ref={audioRef} src="/music/wedding_song.mp3" preload="auto" />
     </div>
+    </>
   );
 };
 

@@ -1,4 +1,5 @@
 export const config = {
+    coverStyle: process.env.NEXT_PUBLIC_COVER_STYLE || "envelope", // options: envelope | door | curtain
     coupleNames: process.env.NEXT_PUBLIC_COUPLE_NAMES || "Default Names",
     eventDate: process.env.NEXT_PUBLIC_EVENT_DATE || "2025-01-01T00:00:00",
     groom: process.env.NEXT_PUBLIC_GROOM_NAME || "Default Groom",
